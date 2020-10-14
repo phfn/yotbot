@@ -1,18 +1,28 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters
 import youtube_dl
+import sys
 
-
-def hello(update, context):
+def start(update, context):
     update.message.reply_text(
-        'Hello {}'.format(update.message.from_user.first_name))
-def ps(update, context):
-    print(update)
-    update.message.reply_text(update.message.text)
+        "Hi, nice to see you here. Just paste your links and i will download for uu")
 
-updater = Updater('token', use_context=True)
+def dl(update, context):
+    ytdl_argv = {'format': 'bestaudio/best',
+                 'postprocessors': [{
+                     'key': 'FFmpegExtractAudio',
+                     'preferredcodec': 'mp3',
+                     'preferredquality': '320',
+                 }]
+                 }
+    with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
+        ytdl.download([update.message.text])
 
-updater.dispatcher.add_handler(CommandHandler('hello', hello))
-updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, ps))
+token= sys.argv[1]
+updater = Updater(token, use_context=True)
+
+
+updater.dispatcher.add_handler(CommandHandler('start', start))
+updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, dl))
 
 updater.start_polling()
 updater.idle()
