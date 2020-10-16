@@ -66,7 +66,7 @@ def dl(update: telegram.update.Update, context):
     url=update.message.text
     if pat.match(url):
         path = random_string()
-        bitrates=[320, 192, 126, 64, 32, 16, 8]
+        bitrates=[320, 192, 124, 64, 32, 16, 8]
         FileSmallEnough=False
         for bitrate in bitrates:
             print("trying "+str(bitrate)+"...")
