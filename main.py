@@ -51,7 +51,7 @@ def dl(update, context):
     # check if message is a valid url
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
     if pat.match(update.message.text):
-        
+
         path = ytdl(update.message.text)
 
         # if file if to big (50mb) teegram wont send it
@@ -60,7 +60,9 @@ def dl(update, context):
             if os.stat(path + ".mp3").st_size > 50_000_000:
                 path = ytdl(update.message.text, 128)
                 if os.stat(path + ".mp3").st_size > 50_000_000:
-                    update.message.reply_text("Die Datei war leider zu Groß")
+                    path = ytdl(update.message.text, 64)
+                    if os.stat(path + ".mp3").st_size > 50_000_000:
+                        update.message.reply_text("Die Datei war leider zu Groß")
 
         with open(path + ".mp3", "rb") as file:
             update.message.reply_audio(audio=file)
