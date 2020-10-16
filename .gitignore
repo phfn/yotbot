@@ -10,7 +10,6 @@
 *.mp4
 *.webm
 *.avi
-*.part
 
 # User-specific stuff
 .idea/**/workspace.xml
