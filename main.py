@@ -6,7 +6,6 @@ import re
 import string
 import random
 import os
-import requests
 from mutagen.mp3 import MP3 as mp3_tags
 
 
