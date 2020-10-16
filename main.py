@@ -74,9 +74,14 @@ def ytdl(url, path, preferredquality=320, forcetitle=True, quiet=True):
 
 
     return path
+def dl(update, context):
+    if len(update.message.text.split(" ")) < 2:
+        update.message.reply_text("Please senda link togeather. for example /dl@phfn_bot https://www.youtube.com/watch?v=BX6KILafIS0")
+        return
+    update.message.text=update.message.text.split(" ")[1]
+    download_video(update, context)
 
-
-def dl(update: telegram.update.Update, context):
+def download_video(update: telegram.update.Update, context):
     # check if message is a valid url
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
     url=update.message.text
@@ -123,7 +128,9 @@ updater = Updater(token, use_context=True)
 updater.dispatcher.add_handler(CommandHandler('start', start, run_async=True))
 updater.dispatcher.add_handler(CommandHandler('help', help, run_async=True))
 updater.dispatcher.add_handler(CommandHandler('about', about, run_async=True))
-updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, dl, run_async=True))
+updater.dispatcher.add_handler(CommandHandler('dl', dl, run_async=True))
+updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, download_video, run_async=True))
+#updater.dispatcher.add_handler(MessageHandler(filters.Filters.group, download_video, run_async=True))
 
 updater.start_polling(timeout=30)
 updater.idle()
