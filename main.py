@@ -1,4 +1,4 @@
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, run_async
 import telegram
 import youtube_dl
 import sys
@@ -8,6 +8,9 @@ import random
 import os
 from mutagen.mp3 import MP3 as mp3_tags
 
+
+def pprint(path, str, end="\n"):
+    print(f"[{path}]{str}")
 
 def get_valid_filename(s):
     """
@@ -36,7 +39,7 @@ def start(update, context):
 
 
 def ytdl(url, path, preferredquality=320, forcetitle=True, quiet=True):
-    print(path)
+    print(f"[{path}]", end="")
     ytdl_argv = {'format': 'bestaudio/best',
                  'writethumbnail': True,
                  'postprocessors': [{
@@ -68,9 +71,13 @@ def dl(update: telegram.update.Update, context):
         bitrates=[320, 192, 124, 64, 32, 16, 8]
         FileSmallEnough=False
         for bitrate in bitrates:
-            print("trying "+str(bitrate)+"...")
-            ytdl(url, path, bitrate, forcetitle=bitrate==320)
-            print("filesize="+str(os.stat(path + ".mp3").st_size/1024/1024))
+            pprint(path, "trying "+str(bitrate)+"...")
+            try:
+                ytdl(url, path, bitrate, forcetitle=bitrate==320)
+            except youtube_dl.utils.DownloadError:
+                update.message.reply_text("There was a Problem downloading the Video. Pleas try again later. If this occurs regulary write it to github.com/phfn/yotbot thx")
+
+            pprint(path, f"filesize@{bitrate}="+str(os.stat(path + ".mp3").st_size/1024/1024))
             if os.stat(path + ".mp3").st_size < 50_000_000:
                 FileSmallEnough=True
                 break
@@ -85,22 +92,22 @@ def dl(update: telegram.update.Update, context):
         except FileExistsError:
             os.remove(new_path + ".mp3")
             os.rename(path + ".mp3", new_path + ".mp3")
-        path = new_path
-        with open(path + ".mp3", "rb") as file:
+        new_path
+        with open(new_path + ".mp3", "rb") as file:
             update.message.reply_audio(audio=file)
-        os.remove(path + ".mp3")
+        os.remove(new_path + ".mp3")
     else:
         update.message.reply_text("Well that didnt work")
 
-    print("finisch")
+    pprint(path, "finisch")
 
 
 token = sys.argv[1]
 
 updater = Updater(token, use_context=True)
 
-updater.dispatcher.add_handler(CommandHandler('start', start))
-updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, dl))
+updater.dispatcher.add_handler(CommandHandler('start', start, run_async=True))
+updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, dl, run_async=True))
 
 updater.start_polling(timeout=30)
 updater.idle()
