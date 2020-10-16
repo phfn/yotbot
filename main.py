@@ -36,6 +36,20 @@ def random_string(length=5):
 def start(update, context):
     update.message.reply_text(
         "Hi, nice to see you here. Just paste your links and i will download for u")
+def help(update, context):
+    update.message.reply_text(
+        "Just paste your links here and i will send you a file back. "
+        "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour"
+        "If you have any further questions, suggestions, bugs, feature requests, feel free to visit github.com/phfn/yotbot or via @hphfn08"
+        "- Paul"
+    )
+def about(update, context):
+    update.message.reply_text("Hi, i'm paul (@phfn08), and i wrote this bot. I hope you like it. If you want to know more about the YOTBot visi github.com/phfn/yotbot"
+                              "A huge thanks to all the libaries i used: "
+                              "youtube-dl (managing all the downloads)"
+                              "telgram-bot-python (managing all the telegramm specific stuff, i don't wanna handle)"
+                              "mutagen (handeling some of the Tagging stuff)"
+                              "and to @clevero")
 
 
 def ytdl(url, path, preferredquality=320, forcetitle=True, quiet=True):
@@ -107,6 +121,8 @@ token = sys.argv[1]
 updater = Updater(token, use_context=True)
 
 updater.dispatcher.add_handler(CommandHandler('start', start, run_async=True))
+updater.dispatcher.add_handler(CommandHandler('help', help, run_async=True))
+updater.dispatcher.add_handler(CommandHandler('about', about, run_async=True))
 updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, dl, run_async=True))
 
 updater.start_polling(timeout=30)
