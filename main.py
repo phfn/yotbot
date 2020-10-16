@@ -71,7 +71,7 @@ def dl(update: telegram.update.Update, context):
         for bitrate in bitrates:
             print("trying "+str(bitrate)+"...")
             ytdl(url, path, bitrate, forcetitle=bitrate==320)
-            print("filesize="+str(os.stat(path + ".mp3").st_size))
+            print("filesize="+str(os.stat(path + ".mp3").st_size/1024/1024))
             if os.stat(path + ".mp3").st_size < 50_000_000:
                 FileSmallEnough=True
                 break
