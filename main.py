@@ -21,7 +21,7 @@ def get_valid_filename(s):
     'johns_portrait_in_2004.jpg'
     """
     # s = str(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w.]', '', s)
+    return re.sub(r'(?u)[^-\w\s.]', '', s)
 
 
 def random_string(length=5):
@@ -36,7 +36,7 @@ def start(update, context):
         "Hi, nice to see you here. Just paste your links and i will download for u")
 
 
-def ytdl(url, path, preferredquality=320):
+def ytdl(url, path, preferredquality=320, forcetitle=True, quiet=True):
     print(path)
     ytdl_argv = {'format': 'bestaudio/best',
                  'writethumbnail': True,
@@ -49,7 +49,8 @@ def ytdl(url, path, preferredquality=320):
                      {'key': 'FFmpegMetadata'}
                  ],
                  "keepvideo": True,
-                 "forcetitle": True,
+                 "forcetitle": forcetitle,
+                 "quiet": quiet,
                  "outtmpl": path + ".webm"
                  }
     with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
@@ -65,23 +66,18 @@ def dl(update: telegram.update.Update, context):
     url=update.message.text
     if pat.match(url):
         path = random_string()
-        ytdl(url, path)
-
-        # if file if to big (50mb) teegram wont send it
-        if os.stat(path + ".mp3").st_size > 50_000_000:
-            update.message.reply_text("oh, thats a long vid. Could take a while, but i'll try my best")
-            os.remove(path + ".mp3")
-            ytdl(url, path, 192)
-            if os.stat(path + ".mp3").st_size > 50_000_000:
-                os.remove(path + ".mp3")
-                ytdl(url, path, 128)
-                if os.stat(path + ".mp3").st_size > 50_000_000:
-                    os.remove(path + ".mp3")
-                    path = ytdl(update.message.text, 64)
-                    if os.stat(path + ".mp3").st_size > 50_000_000:
-                        os.remove(path + ".mp3")
-                        update.message.reply_text("Die Datei war leider zu Groß")
+        bitrates=[320, 192, 126, 64, 32, 16, 8]
+        FileSmallEnough=False
+        for bitrate in bitrates:
+            print("trying "+str(bitrate)+"...")
+            ytdl(url, path, bitrate, forcetitle=bitrate==320)
+            print("filesize="+str(os.stat(path + ".mp3").st_size))
+            if os.stat(path + ".mp3").st_size < 50_000_000:
+                FileSmallEnough=True
+                break
         os.remove(path+".webm")
+        if not FileSmallEnough:
+            update.message.reply_text("File was to big. I'm sry :/")
 
         # rename file to title
         new_path = get_valid_filename(str(mp3_tags(path + ".mp3")["TIT2"]))
