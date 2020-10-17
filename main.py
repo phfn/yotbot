@@ -73,9 +73,9 @@ def command_dl(update, context):
 def command_search(update, context):
     if len(update.message.text.split(" ")) < 2:
         update.message.reply_text(
-            "Please senda link togeather. for example /dl@phfn_bot https://www.youtube.com/watch?v=BX6KILafIS0")
+            "Please senda link togeather. for example /search hammerfall")
         return
-    download_video(update, "ytsearch1:"+update.message.text.split(" ")[1])
+    download_video(update, "ytsearch1:"+update.message.text.split(" ", maxsplit=1)[1])
 
 
 def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True):
@@ -111,7 +111,7 @@ def download_video(update: telegram.update.Update, url):
             youtube_dl_wrapper(url, path, bitrate, forcetitle=bitrate == 320)
         except youtube_dl.utils.DownloadError:
             update.message.reply_text(
-                "There was a Problem downloading the Video. Pleas try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08thx")
+                "There was a Problem downloading the Video. Pleas try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08 thx")
             return
 
         pprint(path, f"filesize@{bitrate}=" + str(os.stat(path + ".mp3").st_size / 1024 / 1024))
