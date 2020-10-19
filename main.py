@@ -6,6 +6,8 @@ import re
 import string
 import random
 import os
+import json
+import requests
 from mutagen.mp3 import MP3 as mp3_tags
 
 
@@ -73,9 +75,16 @@ def command_dl(update, context):
 def command_search(update, context):
     if len(update.message.text.split(" ")) < 2:
         update.message.reply_text(
-            "Please senda link togeather. for example /search hammerfall")
+            "Please senda query togeather. for example /search hammerfall")
         return
-    download_video(update, "ytsearch1:"+update.message.text.split(" ", maxsplit=1)[1])
+    query=update.message.text.split(" ", maxsplit=1)[1]
+    #use youtube api for search cuz youtube-dl is bugg right now. see https://github.com/ytdl-org/youtube-dl/issues/26937
+    api_url=f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
+    id=json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
+    video_url=f"https://youtube.com/watch?v={id}"
+    print(video_url)
+
+    download_video(update, video_url)
 
 
 def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True):
@@ -145,7 +154,7 @@ def message_handler(update, contexts):
 
 
 token = sys.argv[1]
-
+yt_api_token=sys.argv[2]
 updater = Updater(token, use_context=True)
 
 updater.dispatcher.add_handler(CommandHandler('start', command_start, run_async=True))
