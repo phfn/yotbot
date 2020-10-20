@@ -1,4 +1,8 @@
 help - A short help
 about - Something about the bot and me
 dl - download links. Relevant in group
+<<<<<<< HEAD
 search - download the first result of a yt search of a keyword
+=======
+search - download the first result of a yt search of a keyword
+>>>>>>> f05f2c5681bc7c4b706c9c35358c3497b4d69a7f
