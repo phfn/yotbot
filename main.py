@@ -52,6 +52,7 @@ def command_start(update, context):
 def command_help(update, context):
     update.message.reply_text(
         "Just paste your links here and i will send you a file back.\n"
+        "In groups add the bot and write /dl@newwYOTBot https://www.youtube.com/watch?v=umnULvgEv5Q"
         "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour\n"
         f"Our maximum video Limit is {int(MAX_VIDEO_LENGTH/60)}min.\n"
         "You can download nearly every Video from nearly every site\n"
@@ -75,11 +76,13 @@ def command_dl(update, context):
         update.message.reply_text(
             "Please senda link togeather. for example /dl@phfn_bot https://www.youtube.com/watch?v=BX6KILafIS0")
         return
+    url=update.message.text.split(" ")[1]
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
-    if pat.match(update.message.text):
-        download_video(update, update.message.text.split(" ")[1])
+    if pat.match(url):
+        download_video(update, url)
     else:
         update.message.reply_text("I think that was no link. :/ try /s ")
+        pprint(update.message.text, "is no link")
 
 
 def command_search(update, context):
@@ -162,7 +165,8 @@ def message_handler(update, contexts):
     if pat.match(update.message.text):
         download_video(update, update.message.text)
     else:
-        print("I think that was no link. :/ try /s (in Beta right now")
+        update.message.reply_text("I think that was no link. :/ try /s ")
+        pprint(update.message.text, "is no link")
 
 
 token = sys.argv[1]
