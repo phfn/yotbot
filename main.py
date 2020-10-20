@@ -8,11 +8,20 @@ import random
 import os
 import json
 import requests
+import datetime
 from mutagen.mp3 import MP3 as mp3_tags
+
+MAX_VIDEO_LENGTH=240*60
 
 
 def pprint(path, str, end="\n"):
-    print(f"[{path}]{str}")
+    print(f"{datetime.datetime.now()}[{path}]{str}", end=end)
+
+
+def get_length_of_video(url):
+    with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
+        duration = ytdl.extract_info(url)['duration']
+    return duration
 
 
 def get_valid_filename(s):
@@ -44,6 +53,7 @@ def command_help(update, context):
     update.message.reply_text(
         "Just paste your links here and i will send you a file back.\n"
         "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour\n"
+        f"Our maximum video Limit is {int(MAX_VIDEO_LENGTH/60)}min.\n"
         "You can download nearly every Video from nearly every site\n"
         "If you have any further questions, suggestions, bugs, feature requests, feel free to visit github.com/phfn/yotbot or via @phfn08\n"
         "- Paul"
@@ -52,12 +62,12 @@ def command_help(update, context):
 
 def command_about(update, context):
     update.message.reply_text(
-        "Hi, i'm paul (@phfn08), and i wrote this bot. I hope you like it. If you want to know more about the YOTBot visi github.com/phfn/yotbot \n"
+        "Hi, i'm paul (@phfn08), and i wrote this bot cuz its fun (and i wanted to use it). I hope you like it. If you want to know more about the YOTBot visi github.com/phfn/yotbot \n"
         "A huge thanks to all the libaries i used:\n"
         "youtube-dl (managing all the downloads)\n"
         "telgram-bot-python (managing all the telegramm specific stuff, i don't wanna handle)\n"
         "mutagen (handeling some of the Tagging stuff)\n"
-        "and to @clevero\n")
+        "and to @Clevero\n")
 
 
 def command_dl(update, context):
@@ -69,7 +79,7 @@ def command_dl(update, context):
     if pat.match(update.message.text):
         download_video(update, update.message.text.split(" ")[1])
     else:
-        print("I think that was no link. :/ try /s (in Beta right now")
+        update.message.reply_text("I think that was no link. :/ try /s ")
 
 
 def command_search(update, context):
@@ -82,13 +92,11 @@ def command_search(update, context):
     api_url=f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
     id=json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
     video_url=f"https://youtube.com/watch?v={id}"
-    print(video_url)
 
     download_video(update, video_url)
 
 
 def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True):
-    print(f"[{path}]", end="")
     ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
                  'writethumbnail': True,  # download thumbnail
                  'postprocessors': [{
@@ -100,18 +108,22 @@ def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=T
                      {'key': 'FFmpegMetadata'}  # add metadata to mp3 file
                  ],
                  "keepvideo": True,  # keep the video after converting to mp3
-                 "forcetitle": forcetitle,  # printing title
                  "quiet": quiet,  # dont print everythin
                  "outtmpl": path + ".webm"  # outputtemplate
                  }
     with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
         ytdl.download([url])
-
     return path
 
 
 def download_video(update: telegram.update.Update, url):
     path = random_string()
+    pprint(path, f"download_video: {url}")
+    if get_length_of_video(url)>MAX_VIDEO_LENGTH:
+        update.message.reply_text(f"Your Video is to long. Our maximum video Limit is {int(MAX_VIDEO_LENGTH/60)}min")
+        pprint(path, "Video to long")
+        return
+
     bitrates = [320, 192, 124, 64, 32, 16, 8]
     FileSmallEnough = False
     for bitrate in bitrates:

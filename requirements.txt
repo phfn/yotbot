@@ -2,3 +2,4 @@ python-telegram-bot
 youtube_dl
 mutagen
 django
+requests
