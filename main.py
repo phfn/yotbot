@@ -10,8 +10,9 @@ import json
 import requests
 import datetime
 from mutagen.mp3 import MP3 as mp3_tags
+from urllib.error import HTTPError, URLError
 
-MAX_VIDEO_LENGTH=240*60
+MAX_VIDEO_LENGTH = 240 * 60
 
 
 def pprint(path, str, end="\n"):
@@ -54,7 +55,7 @@ def command_help(update, context):
         "Just paste your links here and i will send you a file back.\n"
         "In groups add the bot and write /dl@newwYOTBot https://www.youtube.com/watch?v=umnULvgEv5Q"
         "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour\n"
-        f"Our maximum video Limit is {int(MAX_VIDEO_LENGTH/60)}min.\n"
+        f"Our maximum video Limit is {int(MAX_VIDEO_LENGTH / 60)}min.\n"
         "You can download nearly every Video from nearly every site\n"
         "If you have any further questions, suggestions, bugs, feature requests, feel free to visit github.com/phfn/yotbot or via @phfn08\n"
         "- Paul"
@@ -76,12 +77,12 @@ def command_dl(update, context):
         update.message.reply_text(
             "Please senda link togeather. for example /dl@phfn_bot https://www.youtube.com/watch?v=BX6KILafIS0")
         return
-    url=update.message.text.split(" ")[1]
+    url = update.message.text.split(" ")[1]
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
     if pat.match(url):
         download_video(update, url)
     else:
-        update.message.reply_text("I think that was no link. :/ try /s ")
+        update.message.reply_text("I think that was no link. :/ try /search ")
         pprint(update.message.text, "is no link")
 
 
@@ -90,11 +91,11 @@ def command_search(update, context):
         update.message.reply_text(
             "Please senda query togeather. for example /search hammerfall")
         return
-    query=update.message.text.split(" ", maxsplit=1)[1]
-    #use youtube api for search cuz youtube-dl is bugg right now. see https://github.com/ytdl-org/youtube-dl/issues/26937
-    api_url=f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
-    id=json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
-    video_url=f"https://youtube.com/watch?v={id}"
+    query = update.message.text.split(" ", maxsplit=1)[1]
+    # use youtube api for search cuz youtube-dl is bugg right now. see https://github.com/ytdl-org/youtube-dl/issues/26937
+    api_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
+    id = json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
+    video_url = f"https://youtube.com/watch?v={id}"
 
     download_video(update, video_url)
 
@@ -122,18 +123,26 @@ def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=T
 def download_video(update: telegram.update.Update, url):
     path = random_string()
     pprint(path, f"download_video: {url}")
-    if get_length_of_video(url)>MAX_VIDEO_LENGTH:
-        update.message.reply_text(f"Your Video is to long. Our maximum video Limit is {int(MAX_VIDEO_LENGTH/60)}min")
-        pprint(path, "Video to long")
-        return
 
     bitrates = [320, 192, 124, 64, 32, 16, 8]
     FileSmallEnough = False
     for bitrate in bitrates:
         pprint(path, "trying " + str(bitrate) + "...")
         try:
+            if get_length_of_video(url) > MAX_VIDEO_LENGTH:
+                update.message.reply_text(
+                    f"Your Video is to long. Our maximum video Limit is {int(MAX_VIDEO_LENGTH / 60)}min")
+                pprint(path, "Video to long")
+                return
+
+
             youtube_dl_wrapper(url, path, bitrate, forcetitle=bitrate == 320)
-        except youtube_dl.utils.DownloadError:
+        except youtube_dl.utils.DownloadError as err:
+            if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404 or \
+               type(err.exc_info[1]) == URLError:
+                update.message.reply_text("I couldn't find this site")
+                return
+
             update.message.reply_text(
                 "There was a Problem downloading the Video. Pleas try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08 thx")
             return
@@ -165,12 +174,12 @@ def message_handler(update, contexts):
     if pat.match(update.message.text):
         download_video(update, update.message.text)
     else:
-        update.message.reply_text("I think that was no link. :/ try /s ")
+        update.message.reply_text("I think that was no link. :/ try /search ")
         pprint(update.message.text, "is no link")
 
 
 token = sys.argv[1]
-yt_api_token=sys.argv[2]
+yt_api_token = sys.argv[2]
 updater = Updater(token, use_context=True)
 
 updater.dispatcher.add_handler(CommandHandler('start', command_start, run_async=True))
