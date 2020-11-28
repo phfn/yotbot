@@ -53,7 +53,7 @@ def command_start(update, context):
 def command_help(update, context):
     update.message.reply_text(
         "Just paste your links here and i will send you a file back.\n"
-        "In groups add the bot and write /dl@newwYOTBot https://www.youtube.com/watch?v=umnULvgEv5Q"
+        "In groups add the bot and write /dl@yotBot https://www.youtube.com/watch?v=umnULvgEv5Q"
         "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour\n"
         f"Our maximum video Limit is {int(MAX_VIDEO_LENGTH / 60)}min.\n"
         "You can download nearly every Video from nearly every site\n"
@@ -64,18 +64,18 @@ def command_help(update, context):
 
 def command_about(update, context):
     update.message.reply_text(
-        "Hi, i'm paul (@phfn08), and i wrote this bot cuz its fun (and i wanted to use it). I hope you like it. If you want to know more about the YOTBot visi github.com/phfn/yotbot \n"
+        "Hi, i'm paul (@phfn08), and i wrote this bot cuz its fun (and i wanted to use it). I hope you like it. If you want to know more about the YOTBot visit github.com/phfn/yotbot \n"
         "A huge thanks to all the libaries i used:\n"
         "youtube-dl (managing all the downloads)\n"
         "telgram-bot-python (managing all the telegramm specific stuff, i don't wanna handle)\n"
-        "mutagen (handeling some of the Tagging stuff)\n"
+        "mutagen (handeling some of the tagging stuff)\n"
         "and to @Clevero\n")
 
 
 def command_dl(update, context):
     if len(update.message.text.split(" ")) < 2:
         update.message.reply_text(
-            "Please senda link togeather. for example /dl@phfn_bot https://www.youtube.com/watch?v=BX6KILafIS0")
+            "Please senda link togeather. for example /dl@yotBot https://www.youtube.com/watch?v=BX6KILafIS0")
         return
     url = update.message.text.split(" ")[1]
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
@@ -144,7 +144,7 @@ def download_video(update: telegram.update.Update, url):
                 return
 
             update.message.reply_text(
-                "There was a Problem downloading the Video. Pleas try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08 thx")
+                "There was a problem downloading the Video. Please try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08, thx")
             return
 
         pprint(path, f"filesize@{bitrate}=" + str(os.stat(path + ".mp3").st_size / 1024 / 1024))
