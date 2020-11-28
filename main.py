@@ -46,12 +46,12 @@ def random_string(length=5):
 
 
 def command_start(update, context):
-    update.message.reply_text(
+    update.effective_message.reply_text(
         "Hi, nice to see you here. Just paste your links and i will download for u")
 
 
 def command_help(update: telegram.Update, context):
-    update.message.reply_text(
+    update.effective_message.reply_text(
         "Just paste your links here and i will send you a file back.\n"
         "In groups add the bot and write /dl@yotBot https://www.youtube.com/watch?v=umnULvgEv5Q"
         "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour\n"
@@ -63,7 +63,7 @@ def command_help(update: telegram.Update, context):
 
 
 def command_about(update, context):
-    update.message.reply_text(
+    update.effective_message.reply_text(
         "Hi, i'm paul (@phfn08), and i wrote this bot cuz its fun (and i wanted to use it). I hope you like it. If you want to know more about the YOTBot visit github.com/phfn/yotbot \n"
         "A huge thanks to all the libaries i used:\n"
         "youtube-dl (managing all the downloads)\n"
@@ -73,25 +73,25 @@ def command_about(update, context):
 
 
 def command_dl(update, context):
-    if len(update.message.text.split(" ")) < 2:
-        update.message.reply_text(
+    if len(update.effective_message.text.split(" ")) < 2:
+        update.effective_message.reply_text(
             "Please senda link togeather. for example /dl@yotBot https://www.youtube.com/watch?v=BX6KILafIS0")
         return
-    url = update.message.text.split(" ")[1]
+    url = update.effective_message.text.split(" ")[1]
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
     if pat.match(url):
         download_video(update, url)
     else:
-        update.message.reply_text("I think that was no link. :/ try /search ")
-        pprint(update.message.text, "is no link")
+        update.effective_message.reply_text("I think that was no link. :/ try /search ")
+        pprint(update.effective_message.text, "is no link")
 
 
 def command_search(update, context):
-    if len(update.message.text.split(" ")) < 2:
-        update.message.reply_text(
+    if len(update.effective_message.text.split(" ")) < 2:
+        update.effective_message.reply_text(
             "Please senda query togeather. for example /search hammerfall")
         return
-    query = update.message.text.split(" ", maxsplit=1)[1]
+    query = update.effective_message.text.split(" ", maxsplit=1)[1]
     # use youtube api for search cuz youtube-dl is bugg right now. see https://github.com/ytdl-org/youtube-dl/issues/26937
     api_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
     id = json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
@@ -130,7 +130,7 @@ def download_video(update: telegram.update.Update, url):
         pprint(path, "trying " + str(bitrate) + "...")
         try:
             if get_length_of_video(url) > MAX_VIDEO_LENGTH:
-                update.message.reply_text(
+                update.effective_message.reply_text(
                     f"Your Video is to long. Our maximum video Limit is {int(MAX_VIDEO_LENGTH / 60)}min")
                 pprint(path, "Video to long")
                 return
@@ -140,10 +140,10 @@ def download_video(update: telegram.update.Update, url):
         except youtube_dl.utils.DownloadError as err:
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404 or \
                type(err.exc_info[1]) == URLError:
-                update.message.reply_text("I couldn't find this site")
+                update.effective_message.reply_text("I couldn't find this site")
                 return
 
-            update.message.reply_text(
+            update.effective_message.reply_text(
                 "There was a problem downloading the Video. Please try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08, thx")
             return
 
@@ -153,7 +153,7 @@ def download_video(update: telegram.update.Update, url):
             break
     os.remove(path + ".webm")
     if not FileSmallEnough:
-        update.message.reply_text("File was to big. I'm sry :/")
+        update.effective_message.reply_text("File was to big. I'm sry :/")
 
     # rename file to title
     new_path = get_valid_filename(str(mp3_tags(path + ".mp3")["TIT2"]))
@@ -164,18 +164,18 @@ def download_video(update: telegram.update.Update, url):
         os.rename(path + ".mp3", new_path + ".mp3")
 
     with open(new_path + ".mp3", "rb") as file:
-        update.message.reply_audio(audio=file)
+        update.effective_message.reply_audio(audio=file)
     os.remove(new_path + ".mp3")
     pprint(path, "finisch")
 
 
 def message_handler(update: telegram.Update, contexts):
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
-    if pat.match(update.message.text):
-        download_video(update, update.message.text)
+    if pat.match(update.effective_message.text):
+        download_video(update, update.effective_message.text)
     else:
-        update.message.reply_text("I think that was no link. :/ try /search ")
-        pprint(update.message.text, "is no link")
+        update.effective_message.reply_text("I think that was no link. :/ try /search ")
+        pprint(update.effective_message.text, "is no link")
 
 
 token = sys.argv[1]
