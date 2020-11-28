@@ -50,7 +50,7 @@ def command_start(update, context):
         "Hi, nice to see you here. Just paste your links and i will download for u")
 
 
-def command_help(update, context):
+def command_help(update: telegram.Update, context):
     update.message.reply_text(
         "Just paste your links here and i will send you a file back.\n"
         "In groups add the bot and write /dl@yotBot https://www.youtube.com/watch?v=umnULvgEv5Q"
@@ -123,7 +123,7 @@ def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=T
 def download_video(update: telegram.update.Update, url):
     path = random_string()
     pprint(path, f"download_video: {url}")
-
+    update.effective_chat.send_action(telegram.chataction.ChatAction.UPLOAD_AUDIO)
     bitrates = [320, 192, 124, 64, 32, 16, 8]
     FileSmallEnough = False
     for bitrate in bitrates:
@@ -169,7 +169,7 @@ def download_video(update: telegram.update.Update, url):
     pprint(path, "finisch")
 
 
-def message_handler(update, contexts):
+def message_handler(update: telegram.Update, contexts):
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
     if pat.match(update.message.text):
         download_video(update, update.message.text)
