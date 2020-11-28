@@ -86,7 +86,7 @@ def command_dl(update, context):
         pprint(update.effective_message.text, "is no link")
 
 
-def command_search(update, context):
+def command_search(update: telegram.Update, context):
     if len(update.effective_message.text.split(" ")) < 2:
         update.effective_message.reply_text(
             "Please senda query togeather. for example /search hammerfall")
@@ -94,6 +94,9 @@ def command_search(update, context):
     query = update.effective_message.text.split(" ", maxsplit=1)[1]
     # use youtube api for search cuz youtube-dl is bugg right now. see https://github.com/ytdl-org/youtube-dl/issues/26937
     api_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
+    if len(json.loads(requests.get(api_url).text)["items"]) <=0:
+        update.effective_message.reply_text(f"Leider hab ich kein zu {query} Video gefunden :/")
+        return
     id = json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
     video_url = f"https://youtube.com/watch?v={id}"
 
