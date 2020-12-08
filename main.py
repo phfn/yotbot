@@ -111,7 +111,7 @@ def command_search(update: telegram.Update, context):
     download_video(update, url=video_url)
 
 
-def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True, search=False):
+def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True):
     ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
                  'writethumbnail': True,  # download thumbnail
                  'postprocessors': [{
@@ -126,8 +126,6 @@ def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=T
                  "quiet": quiet,  # dont print everythin
                  "outtmpl": path + ".webm"  # outputtemplate
                  }
-    if search:
-        ytdl_argv["default_search"] = "ytsearch"
     with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
         ytdl.download([url])
     return path
@@ -190,7 +188,7 @@ def message_handler(update: telegram.Update, contexts):
         pprint(update.effective_message.text, "is no link")
 
 
-token = sys.argv[1]
+token = os.getenv(key="TG_BOT_TOKEN")
 updater = Updater(token, use_context=True)
 
 updater.dispatcher.add_handler(CommandHandler('start', command_start, run_async=True))
