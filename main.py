@@ -92,18 +92,26 @@ def command_search(update: telegram.Update, context):
             "Please senda query togeather. for example /search hammerfall")
         return
     query = update.effective_message.text.split(" ", maxsplit=1)[1]
-    # use youtube api for search cuz youtube-dl is bugg right now. see https://github.com/ytdl-org/youtube-dl/issues/26937
-    api_url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&key={yt_api_token}&type=video&maxResults=1&q={query}"
-    if len(json.loads(requests.get(api_url).text)["items"]) <=0:
-        update.effective_message.reply_text(f"Leider hab ich kein zu {query} Video gefunden :/")
+    ytdl_argv = {
+        'default_search': "ytsearch",
+        "skip_download": True,
+        "quiet": True
+    }
+    with youtube_dl.YoutubeDL({'default_search': "ytsearch", "skip_download": True, "quiet": True}) as ytdl:
+        results = ytdl.extract_info(query)
+
+
+    if len(results["entries"]) <= 0:
+        update.effective_message.reply_text(f"I didn't found any video for {query} :/")
         return
-    id = json.loads(requests.get(api_url).text)["items"][0]["id"]["videoId"]
+
+    id = results["entries"][0]["id"]
     video_url = f"https://youtube.com/watch?v={id}"
 
-    download_video(update, video_url)
+    download_video(update, url=video_url)
 
 
-def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True):
+def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True, search=False):
     ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
                  'writethumbnail': True,  # download thumbnail
                  'postprocessors': [{
@@ -118,6 +126,8 @@ def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=T
                  "quiet": quiet,  # dont print everythin
                  "outtmpl": path + ".webm"  # outputtemplate
                  }
+    if search:
+        ytdl_argv["default_search"] = "ytsearch"
     with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
         ytdl.download([url])
     return path
@@ -138,11 +148,10 @@ def download_video(update: telegram.update.Update, url):
                 pprint(path, "Video to long")
                 return
 
-
             youtube_dl_wrapper(url, path, bitrate, forcetitle=bitrate == 320)
         except youtube_dl.utils.DownloadError as err:
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404 or \
-               type(err.exc_info[1]) == URLError:
+                    type(err.exc_info[1]) == URLError:
                 update.effective_message.reply_text("I couldn't find this site")
                 return
 
@@ -182,7 +191,6 @@ def message_handler(update: telegram.Update, contexts):
 
 
 token = sys.argv[1]
-yt_api_token = sys.argv[2]
 updater = Updater(token, use_context=True)
 
 updater.dispatcher.add_handler(CommandHandler('start', command_start, run_async=True))
