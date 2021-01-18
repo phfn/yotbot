@@ -1,3 +1,6 @@
+import argparse
+import getopt
+
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters, run_async
 import telegram
 import youtube_dl
@@ -13,6 +16,18 @@ from mutagen.mp3 import MP3 as mp3_tags
 from urllib.error import HTTPError, URLError
 
 MAX_VIDEO_LENGTH = 240 * 60
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("botname", help="the telegram name of your bot")
+parser.add_argument("responses", help="a json file containing all response textes")
+args=parser.parse_args()
+response_path = args.responses
+botname=args.botname
+
+with open(response_path) as file:
+    response_texts = json.load(file)
+
 
 
 def pprint(path, str, end="\n"):
@@ -51,45 +66,29 @@ def command_start(update, context):
 
 
 def command_help(update: telegram.Update, context):
-    update.effective_message.reply_text(
-        "Just paste your links here and i will send you a file back.\n"
-        "In groups add the bot and write /dl@yotBot https://www.youtube.com/watch?v=umnULvgEv5Q"
-        "If the file is to big (Telegram blocks bot messages > 50 MB) i will try to reduce the bitrate (quality) of the File. For good quality keep the length under 1 hour\n"
-        f"Our maximum video Limit is {int(MAX_VIDEO_LENGTH / 60)}min.\n"
-        "You can download nearly every Video from nearly every site\n"
-        "If you have any further questions, suggestions, bugs, feature requests, feel free to visit github.com/phfn/yotbot or via @phfn08\n"
-        "- Paul"
-    )
+    update.effective_message.reply_text(response_texts["help"].replace("{limit}", f"{int(MAX_VIDEO_LENGTH / 60)}").replace("{botname}", botname))
 
 
 def command_about(update, context):
-    update.effective_message.reply_text(
-        "Hi, i'm paul (@phfn08), and i wrote this bot cuz its fun (and i wanted to use it). I hope you like it. If you want to know more about the YOTBot visit github.com/phfn/yotbot \n"
-        "A huge thanks to all the libaries i used:\n"
-        "youtube-dl (managing all the downloads)\n"
-        "telgram-bot-python (managing all the telegramm specific stuff, i don't wanna handle)\n"
-        "mutagen (handeling some of the tagging stuff)\n"
-        "and to @Clevero\n")
+    update.effective_message.reply_text(response_texts["about"])
 
 
 def command_dl(update, context):
     if len(update.effective_message.text.split(" ")) < 2:
-        update.effective_message.reply_text(
-            "Please senda link togeather. for example /dl@yotBot https://www.youtube.com/watch?v=BX6KILafIS0")
+        update.effective_message.reply_text(response_texts["dl"].replace("{botname}", botname))
         return
     url = update.effective_message.text.split(" ")[1]
     pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
     if pat.match(url):
         download_video(update, url)
     else:
-        update.effective_message.reply_text("I think that was no link. :/ try /search ")
+        update.effective_message.reply_text(response_texts["not_an_url"])
         pprint(update.effective_message.text, "is no link")
 
 
 def command_search(update: telegram.Update, context):
     if len(update.effective_message.text.split(" ")) < 2:
-        update.effective_message.reply_text(
-            "Please senda query togeather. for example /search hammerfall")
+        update.effective_message.reply_text(response_texts["search"])
         return
     query = update.effective_message.text.split(" ", maxsplit=1)[1]
     ytdl_argv = {
@@ -100,9 +99,8 @@ def command_search(update: telegram.Update, context):
     with youtube_dl.YoutubeDL({'default_search': "ytsearch", "skip_download": True, "quiet": True}) as ytdl:
         results = ytdl.extract_info(query)
 
-
     if len(results["entries"]) <= 0:
-        update.effective_message.reply_text(f"I didn't found any video for {query} :/")
+        update.effective_message.reply_text(response_texts["vid_not_found"])
         return
 
     id = results["entries"][0]["id"]
@@ -142,7 +140,7 @@ def download_video(update: telegram.update.Update, url):
         try:
             if get_length_of_video(url) > MAX_VIDEO_LENGTH:
                 update.effective_message.reply_text(
-                    f"Your Video is to long. Our maximum video Limit is {int(MAX_VIDEO_LENGTH / 60)}min")
+                    response_texts["vid_to_long"].replace("{limit}", {int(MAX_VIDEO_LENGTH / 60)}))
                 pprint(path, "Video to long")
                 return
 
@@ -150,11 +148,10 @@ def download_video(update: telegram.update.Update, url):
         except youtube_dl.utils.DownloadError as err:
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404 or \
                     type(err.exc_info[1]) == URLError:
-                update.effective_message.reply_text("I couldn't find this site")
+                update.effective_message.reply_text(response_texts["404"])
                 return
 
-            update.effective_message.reply_text(
-                "There was a problem downloading the Video. Please try again later. If this occurs regulary write it to github.com/phfn/yotbot or text me @phfn08, thx")
+            update.effective_message.reply_text(response_texts["ytdl_problem"])
             return
 
         pprint(path, f"filesize@{bitrate}=" + str(os.stat(path + ".mp3").st_size / 1024 / 1024))
@@ -163,7 +160,7 @@ def download_video(update: telegram.update.Update, url):
             break
     os.remove(path + ".webm")
     if not FileSmallEnough:
-        update.effective_message.reply_text("File was to big. I'm sry :/")
+        update.effective_message.reply_text(response_texts["file_to_big"])
 
     # rename file to title
     new_path = get_valid_filename(str(mp3_tags(path + ".mp3")["TIT2"]))
@@ -184,7 +181,7 @@ def message_handler(update: telegram.Update, contexts):
     if pat.match(update.effective_message.text):
         download_video(update, update.effective_message.text)
     else:
-        update.effective_message.reply_text("I think that was no link. :/ try /search ")
+        update.effective_message.reply_text(response_texts["not_an_url"])
         pprint(update.effective_message.text, "is no link")
 
 
