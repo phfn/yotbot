@@ -1,0 +1,13 @@
+{
+  "help": "send a link and i'll download it",
+  "about": "this is an instance of yotbot, yot stands for Youtube Over Telegram",
+  "dl": "Please append a link . for example /dl@{botname} https://www.youtube.com/watch?v=BX6KILafIS0",
+  "search": "Please senda query togeather. for example /search hammerfall",
+  "vid_not_found": "I didn't found any video for {query} :/",
+  "not_an_url": "I think that was no link. :/ try /search ",
+  "vid_to_long": "Your video is to long. Our maximum video length is {limit} min",
+  "404": "I couldn't find this site",
+  "429": "Youtube blocked me. Please try again in a few days",
+  "ytdl_problem": "There was a problem downloading the Video.",
+  "file_to_big" : "File was to big. I'm sry :/"
+}
