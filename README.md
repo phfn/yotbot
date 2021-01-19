@@ -1,4 +1,4 @@
-# yotbot
+# YOTBot
 HeyHo this is a Telegram Bot for Downloading Youtube videos as MP3 Files.
 
 ## Requirements
