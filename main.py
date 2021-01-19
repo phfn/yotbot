@@ -1,63 +1,29 @@
 import argparse
-import getopt
-
+from Video import Video
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters, run_async
 import telegram
 import youtube_dl
-import sys
 import re
-import string
-import random
 import os
 import json
-import requests
 import datetime
-from mutagen.mp3 import MP3 as mp3_tags
 from urllib.error import HTTPError, URLError
 
 MAX_VIDEO_LENGTH = 240 * 60
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("botname", help="the telegram name of your bot")
 parser.add_argument("responses", help="a json file containing all response textes")
-args=parser.parse_args()
+args = parser.parse_args()
 response_path = args.responses
-botname=args.botname
+botname = args.botname
 
 with open(response_path) as file:
     response_texts = json.load(file)
 
 
-
 def pprint(path, str, end="\n"):
     print(f"{datetime.datetime.now()}[{path}]{str}", end=end)
-
-
-def get_length_of_video(url):
-    with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
-        duration = ytdl.extract_info(url)['duration']
-    return duration
-
-
-def get_valid_filename(s):
-    """
-    stolen at django utils text, but spacec allowed
-    Return the given string converted to a string that can be used for a clean
-    filename. Remove leading and trailing spaces; and remove anything that is not an alphanumeric, dash,
-    underscore, or dot.
-    >>> get_valid_filename("EINKAUFEN! - Minecraft [Deutsch/HD]")
-    'EINKAUFEN - Minecraft DeutschHD'
-    """
-    # s = str(s).strip().replace(' ', '_')
-    return re.sub(r'(?u)[^-\w\s.]', '', s)
-
-
-def random_string(length=5):
-    ret = ""
-    for i in range(length):
-        ret = ret + random.choice(string.ascii_letters)
-    return ret
 
 
 def command_start(update, context):
@@ -66,7 +32,8 @@ def command_start(update, context):
 
 
 def command_help(update: telegram.Update, context):
-    update.effective_message.reply_text(response_texts["help"].replace("{limit}", f"{int(MAX_VIDEO_LENGTH / 60)}").replace("{botname}", botname))
+    update.effective_message.reply_text(
+        response_texts["help"].replace("{limit}", f"{int(MAX_VIDEO_LENGTH / 60)}").replace("{botname}", botname))
 
 
 def command_about(update, context):
@@ -103,48 +70,29 @@ def command_search(update: telegram.Update, context):
         update.effective_message.reply_text(response_texts["vid_not_found"])
         return
 
-    id = results["entries"][0]["id"]
-    video_url = f"https://youtube.com/watch?v={id}"
+    video_id = results["entries"][0]["id"]
+    video_url = f"https://youtube.com/watch?v={video_id}"
 
     download_video(update, url=video_url)
 
 
-def youtube_dl_wrapper(url, path, preferredquality=320, forcetitle=True, quiet=True):
-    ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
-                 'writethumbnail': True,  # download thumbnail
-                 'postprocessors': [{
-                     'key': 'FFmpegExtractAudio',
-                     'preferredcodec': 'mp3',
-                     'preferredquality': str(preferredquality),
-                 },
-                     {'key': 'EmbedThumbnail'},  # add thumbnail to mp3 file
-                     {'key': 'FFmpegMetadata'}  # add metadata to mp3 file
-                 ],
-                 "keepvideo": True,  # keep the video after converting to mp3
-                 "quiet": quiet,  # dont print everythin
-                 "outtmpl": path + ".webm"  # outputtemplate
-                 }
-    with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
-        ytdl.download([url])
-    return path
-
-
 def download_video(update: telegram.update.Update, url):
-    path = random_string()
+    vid = Video(url)
+    path = vid.get_subdir()
     pprint(path, f"download_video: {url}")
     update.effective_chat.send_action(telegram.chataction.ChatAction.UPLOAD_AUDIO)
-    bitrates = [320, 192, 124, 64, 32, 16, 8]
-    FileSmallEnough = False
+    bitrates = [320, 256, 192, 160, 128, 96, 64, 32, 16, 8]
+    file_small_enough = False
     for bitrate in bitrates:
         pprint(path, "trying " + str(bitrate) + "...")
         try:
-            if get_length_of_video(url) > MAX_VIDEO_LENGTH:
+            if vid.get_legth() > MAX_VIDEO_LENGTH:
                 update.effective_message.reply_text(
                     response_texts["vid_to_long"].replace("{limit}", {int(MAX_VIDEO_LENGTH / 60)}))
                 pprint(path, "Video to long")
                 return
 
-            youtube_dl_wrapper(url, path, bitrate, forcetitle=bitrate == 320)
+            mp3_file = vid.download_mp3(bitrate)
         except youtube_dl.utils.DownloadError as err:
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404 or \
                     type(err.exc_info[1]) == URLError:
@@ -154,25 +102,17 @@ def download_video(update: telegram.update.Update, url):
             update.effective_message.reply_text(response_texts["ytdl_problem"])
             return
 
-        pprint(path, f"filesize@{bitrate}=" + str(os.stat(path + ".mp3").st_size / 1024 / 1024))
-        if os.stat(path + ".mp3").st_size < 50_000_000:
-            FileSmallEnough = True
+        pprint(path, f"filesize@{bitrate}=" + str(os.stat(mp3_file).st_size / 1024 / 1024))
+        if os.stat(mp3_file).st_size < 50_000_000:
+            file_small_enough = True
             break
-    os.remove(path + ".webm")
-    if not FileSmallEnough:
+
+    if not file_small_enough:
         update.effective_message.reply_text(response_texts["file_to_big"])
 
-    # rename file to title
-    new_path = get_valid_filename(str(mp3_tags(path + ".mp3")["TIT2"]))
-    try:
-        os.rename(path + ".mp3", new_path + ".mp3")
-    except FileExistsError:
-        os.remove(new_path + ".mp3")
-        os.rename(path + ".mp3", new_path + ".mp3")
-
-    with open(new_path + ".mp3", "rb") as file:
+    with open(mp3_file, "rb") as file:
         update.effective_message.reply_audio(audio=file)
-    os.remove(new_path + ".mp3")
+    vid.clear()
     pprint(path, "finisch")
 
 
