@@ -13,8 +13,8 @@ class Video:
         self.url = video_url
         self.downloaded = False
         self.subdir = yotbot_utils.get_random_string()
-        os.mkdir(self.subdir)
         self.path = working_dir + "/" + self.subdir
+        os.mkdir(self.path)
         self.title = self.subdir
 
     def get_legth(self):
@@ -64,7 +64,7 @@ class Video:
         return mp3_path
 
     def clear(self):
-        shutil.rmtree(self.subdir)
+        shutil.rmtree(self.path)
 
 
 
