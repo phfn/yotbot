@@ -5,6 +5,7 @@ import os
 import yotbot_utils
 from mutagen.mp3 import MP3
 from mutagen import MutagenError
+import logging
 
 
 class Video:
@@ -16,28 +17,31 @@ class Video:
         self.path = working_dir + "/" + self.subdir
         os.mkdir(self.path)
         self.title = self.subdir
+        logging.basicConfig(filename=self.path+"/video.log", format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
+        logging.info(f"url={self.url}")
+        logging.info(f"subdir={self.subdir}")
+        logging.info(f"path={self.path}")
 
     def get_legth(self):
+        logging.info("get_length:")
         with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
             try:
                 duration = ytdl.extract_info(self.url)['duration']
+                logging.info(f"length={duration}")
             except KeyError:
                 duration = -1
+                logging.info(f"legth was not found, probebly cuz its no YT Video")
+            except youtube_dl.utils.DownloadError as err:
+                logging.warning(str(err))
+                raise err
             return duration
 
     def get_subdir(self):
         return self.subdir
 
-    def download_video(self):
-        ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
-                     'writethumbnail': True,  # download thumbnail
-                     "quiet": True,  # dont print everythin
-                     "outtmpl": f"{self.subdir}/video.webm"  # outputtemplate
-                     }
-        with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
-            ytdl.download([self.url])
-
     def download_mp3(self, bitrate=320):
+        logging.info(f"downloading...")
+        logging.info("bitrate={bitrate}")
         ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
                      'writethumbnail': True,  # download thumbnail
                      'postprocessors': [{
@@ -53,28 +57,33 @@ class Video:
                      "outtmpl": f"{self.path}/video.webm"  # outputtemplate
                      }
         with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
-            print(ytdl.download([self.url]))
-
+            try:
+                ytdl.download([self.url])
+                logging.info("download finished")
+            except youtube_dl.utils.DownloadError as err:
+                logging.warning("download failed")
+                logging.warning(err)
+                raise err
 
         try:
-            self.title=yotbot_utils.get_valid_filename(str(MP3(f"{self.path}/video.mp3")["TIT2"]))
+            self.title = yotbot_utils.get_valid_filename(str(MP3(f"{self.path}/video.mp3")["TIT2"]))
         except MutagenError:
-            self.title="video"
+            logging.info("could not retrieve mp3 tags")
+            self.title = "video"
+
         mp3_path = shutil.move(f"{self.path}/video.mp3", f"{self.path}/{self.title}.mp3")
+        logging.info(f"moved to {mp3_path}")
         return mp3_path
 
     def clear(self):
+        logging.info("clearing")
         shutil.rmtree(self.path)
 
 
-
-
 if __name__ == "__main__":
-
     url = "https://www.ringtoneshub.org/wp-content/uploads/2020/02/The-Life-of-Ram-BGM-Guitar-Ringtone.mp3"
     # url="https://www.youtube.com/watch?v=m70jMUxuUsQ"
-
+    url="http://localhost:5000"
     vid = Video(url)
-    print(vid.get_legth())
+    #print(vid.get_legth())
     print(vid.download_mp3())
-    vid.clear()
