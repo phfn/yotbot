@@ -96,9 +96,11 @@ def download_video(update: telegram.update.Update, url):
         except youtube_dl.utils.DownloadError as err:
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404:
                 update.effective_message.reply_text(response_texts["404"])
+                vid.clear()
                 return
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 429:
                 update.effective_message.reply_text(response_texts["429"])
+                vid.clear()
                 return
 
             update.effective_message.reply_text(response_texts["ytdl_problem"])
