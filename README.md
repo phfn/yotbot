@@ -17,9 +17,9 @@ export TG_BOT_TOKEN="969855739:AAEqhAK5peBt42I7Z4FqsOFxGQO818ja768"
 
 
 ## Run  
-To start the bot execute the following command. Replace <NameOfMyTGBot> with the name of your bot. To customize the messages the bot writes, you need to modify responses.json, or rewrite it and pass it here.
+To start the bot execute the following command. Replace 'NameOfMyTGBot' with the name of your bot. To customize the messages the bot writes, you need to modify responses.json, or rewrite it and pass it here.
 ```bash
-python main.py myNewYTBot responses.json
+python YOTBot.py myNewYTBot responses.json
 ```
 
 ## Licence
