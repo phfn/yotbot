@@ -15,15 +15,20 @@ class Video:
         self.downloaded = False
         self.subdir = yotbot_utils.get_random_string()
         self.path = working_dir + "/" + self.subdir
-        os.mkdir(self.path)
+        os.makedirs(self.path)
         self.title = self.subdir
         logging.basicConfig(filename=self.path+"/video.log", format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
         logging.info(f"url={self.url}")
         logging.info(f"subdir={self.subdir}")
         logging.info(f"path={self.path}")
 
-    def get_legth(self):
+    def get_length(self):
         logging.info("get_length:")
+        #Try to find out with mutagen
+        if(self.downloaded):
+            return MP3(self.get_full_mp3_path()).get(key="length", default=-1)
+
+        #Try to find out with ytdl
         with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
             try:
                 duration = ytdl.extract_info(self.url)['duration']
@@ -35,6 +40,10 @@ class Video:
                 logging.warning(str(err))
                 raise err
             return duration
+
+    def get_full_mp3_path(self):
+        if not self.downloaded: raise FileNotFoundError
+        return self.path+"/"+self.title+".mp3"
 
     def get_subdir(self):
         return self.subdir
