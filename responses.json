@@ -9,5 +9,6 @@
   "404": "I couldn't find this site",
   "429": "Youtube blocked me. Please try again in a few days",
   "ytdl_problem": "There was a problem downloading the Video.",
-  "file_to_big" : "File was to big. I'm sry :/"
+  "file_to_big" : "File was to big. I'm sry :/",
+  "geoblock" : "This video is not available at this bot's location"
 }
