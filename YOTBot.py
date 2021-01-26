@@ -86,7 +86,7 @@ def download_video(update: telegram.update.Update, url):
     for bitrate in bitrates:
         pprint(path, "trying " + str(bitrate) + "...")
         try:
-            if vid.get_legth() > MAX_VIDEO_LENGTH:
+            if vid.get_length() > MAX_VIDEO_LENGTH:
                 update.effective_message.reply_text(
                     response_texts["vid_to_long"].replace("{limit}", {int(MAX_VIDEO_LENGTH / 60)}))
                 pprint(path, "Video to long")
