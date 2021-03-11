@@ -102,7 +102,8 @@ def download_video(update: telegram.update.Update, url):
                 update.effective_message.reply_text(response_texts["429"])
                 vid.clear()
                 return
-            if "The uploader has not made this video available in your country" in str(err):
+            if "The uploader has not made this video available in your country" in str(err)\
+                    or "This video is not available" in str(err):
                 update.effective_message.reply_text(response_texts["geoblock"])
                 vid.clear()
                 return

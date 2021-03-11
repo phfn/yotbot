@@ -6,7 +6,8 @@ import yotbot_utils
 from mutagen.mp3 import MP3
 from mutagen import MutagenError
 import logging
-
+from importlib import reload
+os.environ["PYTHONUNBUFFERED"]="1"
 
 class Video:
 
@@ -17,6 +18,7 @@ class Video:
         self.path = working_dir + "/" + self.subdir
         os.makedirs(self.path)
         self.title = self.subdir
+        reload(logging)
         logging.basicConfig(filename=self.path+"/video.log", format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
         logging.info(f"url={self.url}")
         logging.info(f"subdir={self.subdir}")
@@ -50,7 +52,7 @@ class Video:
 
     def download_mp3(self, bitrate=320):
         logging.info(f"downloading...")
-        logging.info("bitrate={bitrate}")
+        logging.info(f"bitrate={bitrate}")
         ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
                      'writethumbnail': True,  # download thumbnail
                      'postprocessors': [{
@@ -84,15 +86,21 @@ class Video:
         logging.info(f"moved to {mp3_path}")
         return mp3_path
 
-    def clear(self):
+    def clear(self, keep_log=False):
         logging.info("clearing")
-        shutil.rmtree(self.path)
+        if not keep_log:
+            shutil.rmtree(self.path)
+
+        for file in os.scandir(self.path):
+            if file.name != "video.log":
+                os.remove(file)
 
 
 if __name__ == "__main__":
     url = "https://www.ringtoneshub.org/wp-content/uploads/2020/02/The-Life-of-Ram-BGM-Guitar-Ringtone.mp3"
     # url="https://www.youtube.com/watch?v=m70jMUxuUsQ"
-    url="http://localhost:5000"
+    #  url="http://localhost:5000"
     vid = Video(url)
     #print(vid.get_legth())
-    print(vid.download_mp3())
+    vid.download_mp3()
+    vid.clear(keep_log=True)
