@@ -4,7 +4,7 @@ It's running at [YOTBot](https://telegram.me/yotbot)
  
 
 ## Requirements
-You have to install all packages mentioned in the requirements.txt.
+You have to install all packages mentioned in the requirements.txt. Also you need ffmpeg
 ```bash
 pip install -r requirements.txt
 ```
