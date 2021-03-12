@@ -90,10 +90,10 @@ class Video:
         logging.info("clearing")
         if not keep_log:
             shutil.rmtree(self.path)
-
-        for file in os.scandir(self.path):
-            if file.name != "video.log":
-                os.remove(file)
+        else:
+            for file in os.scandir(self.path):
+                if file.name != "video.log":
+                    os.remove(file)
 
 
 if __name__ == "__main__":
