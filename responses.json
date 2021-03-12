@@ -10,5 +10,6 @@
   "429": "Youtube blocked me. Please try again in a few days",
   "ytdl_problem": "There was a problem downloading the Video.",
   "file_to_big" : "File was to big. I'm sry :/",
-  "geoblock" : "This video is not available at this bot's location"
+  "geoblock" : "This video is not available at this bot's location",
+  "unsupported": "This URL is not supported :/"
 }
