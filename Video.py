@@ -28,20 +28,23 @@ class Video:
         logging.info("get_length:")
         #Try to find out with mutagen
         if(self.downloaded):
-            return MP3(self.get_full_mp3_path()).get(key="length", default=-1)
+            duration = MP3(self.get_full_mp3_path()).get(key="length", default=-1)
 
-        #Try to find out with ytdl
-        with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
-            try:
-                duration = ytdl.extract_info(self.url)['duration']
-                logging.info(f"length={duration}")
-            except KeyError:
-                duration = -1
-                logging.info(f"legth was not found, probebly cuz its no YT Video")
-            except youtube_dl.utils.DownloadError as err:
-                logging.warning(str(err))
-                raise err
-            return duration
+        else:
+            #Try to find out with ytdl
+            with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
+                try:
+                    duration = ytdl.extract_info(self.url)['duration']
+                    logging.info(f"length={duration}")
+                except KeyError:
+                    duration = -1
+                    logging.info(f"legth was not found, probebly cuz its no YT Video")
+                except youtube_dl.utils.DownloadError as err:
+                    logging.warning(str(err))
+                    raise err
+
+        logging.info(duration)
+        return duration
 
     def get_full_mp3_path(self):
         if not self.downloaded: raise FileNotFoundError
@@ -97,10 +100,12 @@ class Video:
 
 
 if __name__ == "__main__":
-    url = "https://www.ringtoneshub.org/wp-content/uploads/2020/02/The-Life-of-Ram-BGM-Guitar-Ringtone.mp3"
-    # url="https://www.youtube.com/watch?v=m70jMUxuUsQ"
+    #  url = "https://www.ringtoneshub.org/wp-content/uploads/2020/02/The-Life-of-Ram-BGM-Guitar-Ringtone.mp3"
+    url="https://www.youtube.com/watch?v=m70jMUxuUsQ"
     #  url="http://localhost:5000"
     vid = Video(url)
+    l = vid.get_length()
+    print(l)
     #print(vid.get_legth())
     vid.download_mp3()
-    vid.clear(keep_log=True)
+    #  vid.clear(keep_log=True)
