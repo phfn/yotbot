@@ -84,43 +84,38 @@ def download_video(update: telegram.update.Update, url):
     bitrates = [320, 256, 192, 160, 128, 96, 64, 32, 16, 8]
     file_small_enough = False
     for bitrate in bitrates:
-        pprint(path, "trying " + str(bitrate) + "...")
+        vid.logger.info("trying " + str(bitrate) + "...")
         try:
             if vid.get_length() > MAX_VIDEO_LENGTH:
                 update.effective_message.reply_text(
                     response_texts["vid_to_long"].replace("{limit}", {int(MAX_VIDEO_LENGTH / 60)}))
-                pprint(path, "Video to long")
+                vid.logger.warning("Video to long")
                 return
 
             mp3_file = vid.download_mp3(bitrate)
         except youtube_dl.utils.DownloadError as err:
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404:
-                update.effective_message.reply_text(response_texts["404"])
-                vid.clear()
-                return
-            if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 429:
-                update.effective_message.reply_text(response_texts["429"])
-                vid.clear()
-                return
-            if "The uploader has not made this video available in your country" in str(err)\
+                error_message = response_texts["404"]
+            elif type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 429:
+                error_message = response_texts["429"]
+            elif "The uploader has not made this video available in your country" in str(err)\
                     or "This video is not available" in str(err):
-                update.effective_message.reply_text(response_texts["geoblock"])
-                vid.clear()
-                return
-            if "Unsupported URL" in str(err):
-                update.effective_message.reply_text(response_texts["geoblock"])
-                vid.clear()
-                return
-            if "Dieses Video ist nur für Abonnenten von Music Premium verfügbar" in str(err):
-                update.effective_message.reply_text(response_texts["geoblock"])
-                vid.clear()
-                return
+                error_message = response_texts["geoblock"]
+            elif "Unsupported URL" in str(err):
+                error_message = response_texts["geoblock"]
+            elif "This video is only available to Music Premium members" in str(err):
+                error_message = response_texts["geoblock"]
+            else:
+                error_message = response_texts["ytdl_problem"]
 
+            update.effective_message.reply_text(error_message)
+            with open(os.path.join(vid.get_path(), "video.log")) as file:
+                update.effective_message.reply_document(file)
 
-            update.effective_message.reply_text(response_texts["ytdl_problem"])
+            vid.clear()
             return
 
-        pprint(path, f"filesize@{bitrate}=" + str(os.stat(mp3_file).st_size / 1024 / 1024))
+        vid.logger.info(f"filesize@{bitrate}=" + str(os.stat(mp3_file).st_size / 1024 / 1024))
         if os.stat(mp3_file).st_size < 50_000_000:
             file_small_enough = True
             break
