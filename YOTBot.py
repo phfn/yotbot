@@ -111,6 +111,11 @@ def download_video(update: telegram.update.Update, url):
                 update.effective_message.reply_text(response_texts["geoblock"])
                 vid.clear()
                 return
+            if "Dieses Video ist nur für Abonnenten von Music Premium verfügbar" in str(err):
+                update.effective_message.reply_text(response_texts["geoblock"])
+                vid.clear()
+                return
+
 
             update.effective_message.reply_text(response_texts["ytdl_problem"])
             return
