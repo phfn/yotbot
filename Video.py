@@ -23,7 +23,7 @@ class Video:
         self.title = self.subdir
         
         # init logging
-        self.logger = logging.getLogger(f"yotbot.{self.subdir}")
+        self.logger = logging.getLogger(f"yotbot.video.{self.subdir}")
         self.logger.setLevel(logging.DEBUG)
 
         fh = logging.FileHandler(self.log_path)
@@ -31,34 +31,33 @@ class Video:
         fh.setLevel(logging.DEBUG)
         self.logger.addHandler(fh)
 
-        ch = logging.StreamHandler()
-        ch.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
-        ch.setLevel(logging.ERROR)
-        self.logger.addHandler(ch)
+        self.logger.debug(f"url={self.url}")
+        self.logger.debug(f"subdir={self.subdir}")
+        self.logger.debug(f"path={self.path}")
 
-        self.logger.info(f"url={self.url}")
-        self.logger.info(f"subdir={self.subdir}")
-        self.logger.info(f"path={self.path}")
+        # this is a workaround for ytdl not to print out error messages, that i catch
+        self.ytdl_log = logging.getLogger("youtube-dl-logger")
+        self.ytdl_log.setLevel(logging.CRITICAL)
 
     def get_length(self):
-        self.logger.info("get_length:")
+        self.logger.debug("get_length:")
         #Try to find out with mutagen
         if(self.downloaded):
             duration = MP3(self.get_full_mp3_path()).get(key="length", default=-1)
 
         else:
             #Try to find out with ytdl
-            with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True}) as ytdl:
+            with youtube_dl.YoutubeDL({"skip_download": True, "quiet": True, "logger": self.ytdl_log}) as ytdl:
                 try:
                     duration = ytdl.extract_info(self.url)['duration']
                 except KeyError:
                     duration = -1
-                    self.logger.info("legth was not found, probebly cuz its no YT Video")
+                    self.logger.debug("legth was not found, probebly cuz its no YT Video")
                 except youtube_dl.utils.YoutubeDLError as err:
-                    self.logger.warning(str(err))
+                    self.logger.debug(str(err))
                     duration = -1
 
-        self.logger.info(f"length={duration}")
+        self.logger.debug(f"length={duration}")
         return duration
 
     def get_full_mp3_path(self):
@@ -72,8 +71,9 @@ class Video:
         return self.path
 
     def download_mp3(self, bitrate=320):
-        self.logger.info(f"downloading...")
-        self.logger.info(f"bitrate={bitrate}")
+        self.logger.debug(f"downloading...")
+        self.logger.debug(f"bitrate={bitrate}")
+
         ytdl_argv = {'format': 'bestaudio/best',  # download audio in best quality
                      'writethumbnail': True,  # download thumbnail
                      'postprocessors': [{
@@ -86,29 +86,30 @@ class Video:
                      ],
                      "keepvideo": True,  # keep the video after converting to mp3
                      "quiet": True,  # dont print everythin
+                     "logger": self.ytdl_log,
                      "outtmpl": f"{self.path}/video.webm"  # outputtemplate
                      }
         with youtube_dl.YoutubeDL(ytdl_argv) as ytdl:
             try:
                 ytdl.download([self.url])
-                self.logger.info("download finished")
+                self.logger.debug("download finished")
             except youtube_dl.utils.DownloadError as err:
-                self.logger.warning(err)
-                self.logger.warning("download failed")
+                self.logger.debug(err)
+                self.logger.debug("download failed")
                 raise err
 
         try:
             self.title = yotbot_utils.get_valid_filename(str(MP3(f"{self.path}/video.mp3")["TIT2"]))
         except MutagenError:
-            self.logger.info("could not retrieve mp3 tags")
+            self.logger.debug("could not retrieve mp3 tags")
             self.title = "video"
 
         mp3_path = shutil.move(f"{self.path}/video.mp3", f"{self.path}/{self.title}.mp3")
-        self.logger.info(f"moved to {mp3_path}")
+        self.logger.debug(f"moved to {mp3_path}")
         return mp3_path
 
     def clear(self, keep_log=False):
-        self.logger.info("clearing")
+        self.logger.debug("clearing")
         for handler in self.logger.handlers:
             handler.close()
         if not keep_log:

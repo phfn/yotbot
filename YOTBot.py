@@ -8,15 +8,33 @@ import os
 import json
 import datetime
 from urllib.error import HTTPError, URLError
+import logging
 
 MAX_VIDEO_LENGTH = 240 * 60
 
 parser = argparse.ArgumentParser()
 parser.add_argument("botname", help="the telegram name of your bot")
 parser.add_argument("responses", help="a json file containing all response textes")
+parser.add_argument("--verbose", help="increase output verbosity", action="store_true")
+parser.add_argument("--log", help="write a log file")
 args = parser.parse_args()
 response_path = args.responses
 botname = args.botname
+
+
+logger = logging.getLogger("yotbot")
+logger.setLevel(logging.DEBUG)
+
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter(f'[%(name)s]%(levelname)s:%(message)s'))
+ch.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+logger.addHandler(ch)
+
+if args.log is not None:
+    fh = logging.FileHandler(args.log)
+    fh.setFormatter(logging.Formatter('[%(name)s]%(asctime)s:%(levelname)s:%(message)s'))
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
 with open(response_path) as file:
     response_texts = json.load(file)
@@ -79,17 +97,17 @@ def command_search(update: telegram.Update, context):
 def download_video(update: telegram.update.Update, url):
     vid = Video(url)
     path = vid.get_subdir()
-    pprint(path, f"download_video: {url}")
+    logger.info(f"download_video: {url}")
     update.effective_chat.send_action(telegram.chataction.ChatAction.UPLOAD_AUDIO)
     bitrates = [320, 256, 192, 160, 128, 96, 64, 32, 16, 8]
     file_small_enough = False
     for bitrate in bitrates:
-        vid.logger.info("trying " + str(bitrate) + "...")
+        vid.logger.debug(f"trying {bitrate}...")
         try:
             if vid.get_length() > MAX_VIDEO_LENGTH:
                 update.effective_message.reply_text(
                     response_texts["vid_to_long"].replace("{limit}", {int(MAX_VIDEO_LENGTH / 60)}))
-                vid.logger.warning("Video to long")
+                vid.logger.debug("Video to long")
                 return
 
             mp3_file = vid.download_mp3(bitrate)
@@ -105,17 +123,22 @@ def download_video(update: telegram.update.Update, url):
                 error_message = response_texts["geoblock"]
             elif "This video is only available to Music Premium members" in str(err):
                 error_message = response_texts["geoblock"]
-            else:
+            else: #Only if i dont know the reason why ytdl is failing
                 error_message = response_texts["ytdl_problem"]
+                update.effective_message.reply_text(error_message)
+                with open(os.path.join(vid.get_path(), "video.log")) as file:
+                    update.effective_message.reply_document(file)
+                logger.warning(err)
+                return
+
 
             update.effective_message.reply_text(error_message)
-            with open(os.path.join(vid.get_path(), "video.log")) as file:
-                update.effective_message.reply_document(file)
 
             vid.clear()
+            logger.info("failed")
             return
 
-        vid.logger.info(f"filesize@{bitrate}=" + str(os.stat(mp3_file).st_size / 1024 / 1024))
+        vid.logger.debug(f"filesize@{bitrate}=" + str(os.stat(mp3_file).st_size / 1024 / 1024))
         if os.stat(mp3_file).st_size < 50_000_000:
             file_small_enough = True
             break
@@ -125,8 +148,10 @@ def download_video(update: telegram.update.Update, url):
 
     with open(mp3_file, "rb") as file:
         update.effective_message.reply_audio(audio=file)
+
     vid.clear()
-    pprint(path, "finisch")
+    logger.info("finisch")
+
 
 
 def message_handler(update: telegram.Update, contexts):
