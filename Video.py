@@ -107,7 +107,7 @@ class Video:
         self.logger.info(f"moved to {mp3_path}")
         return mp3_path
 
-    def clear(self, keep_log=True):
+    def clear(self, keep_log=False):
         self.logger.info("clearing")
         for handler in self.logger.handlers:
             handler.close()
