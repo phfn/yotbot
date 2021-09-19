@@ -9,6 +9,7 @@ import json
 import datetime
 from urllib.error import HTTPError, URLError
 import logging
+from yotbot_utils import get_links
 
 MAX_VIDEO_LENGTH = 240 * 60
 
@@ -29,6 +30,7 @@ ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter(f'[%(name)s]%(levelname)s:%(message)s'))
 ch.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 logger.addHandler(ch)
+
 
 if args.log is not None:
     fh = logging.FileHandler(args.log)
@@ -59,16 +61,16 @@ def command_about(update, context):
 
 
 def command_dl(update, context):
-    if len(update.effective_message.text.split(" ")) < 2:
-        update.effective_message.reply_text(response_texts["dl"].replace("{botname}", botname))
+    message = update.effective_message
+    if len(message.text.split(" ")) < 2:
+        message.reply_text(response_texts["dl"].replace("{botname}", botname))
         return
-    url = update.effective_message.text.split(" ")[1]
-    pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
-    if pat.match(url):
-        download_video(update, url)
-    else:
-        update.effective_message.reply_text(response_texts["not_an_url"])
-        pprint(update.effective_message.text, "is no link")
+    links = get_links(message.text)
+    for link in links:
+        download_video(update, link)
+    if not links:
+        message.reply_text(response_texts["not_an_url"])
+        pprint(message.text, "is no link")
 
 
 def command_search(update: telegram.Update, context):
@@ -155,12 +157,9 @@ def download_video(update: telegram.update.Update, url):
 
 
 def message_handler(update: telegram.Update, contexts):
-    pat = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))")
-    if pat.match(update.effective_message.text):
-        download_video(update, update.effective_message.text)
-    else:
-        update.effective_message.reply_text(response_texts["not_an_url"])
-        pprint(update.effective_message.text, "is no link")
+    links = get_links(update.effective_message.text)
+    for link in links:
+        download_video(update, link)
 
 
 token = os.getenv(key="TG_BOT_TOKEN")
