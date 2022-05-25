@@ -9,17 +9,35 @@ You have to install all packages mentioned in the requirements.txt. Also you nee
 pip install -r requirements.txt
 ```
 
-## Environment Variables
-You have to write the token you got from [BotFather](https://telegram.me/BotFather) into the environment variable TG_BOT_TOKEN.
+## Settings
+You have to specify the token you got from [BotFather](https://telegram.me/BotFather) and the name the bot should interact as.
+You can specify them by setting environment variable or by passing them via cli
 ```bash
 export TG_BOT_TOKEN="969855739:AAEqhAK5peBt42I7Z4FqsOFxGQO818ja768"
+export TG_BOT_NAME="my_wonderfull_download_bot"
+```
+Also there is support for .env files.
+
+```bash
+python YOTBot.py --botname my_wonderfull_download_bot --token "969855739:AAEqhAK5peBt42I7Z4FqsOFxGQO818ja768"
 ```
 
+To customize the messages the bot writes, you need to modify responses.json.
 
-## Run  
-To start the bot execute the following command. Replace 'NameOfMyTGBot' with the name of your bot. To customize the messages the bot writes, you need to modify responses.json, or rewrite it and pass it here.
+## Container
+There is support to build a Container image
 ```bash
-python YOTBot.py myNewYTBot responses.json
+podman build --tag=yotbot .
+```
+
+```docker-compse
+version: "3.3"
+services:
+  yotbot:
+  image: yotbot
+    environment:
+      - TG_BOT_NAME=my_wonderfull_download_bot
+      - TG_BOT_TOKEN=969855739:AAEqhAK5peBt42I7Z4FqsOFxGQO818ja768
 ```
 
 ## Licence

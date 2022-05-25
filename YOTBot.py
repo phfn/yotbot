@@ -10,18 +10,24 @@ import datetime
 from urllib.error import HTTPError, URLError
 import logging
 from yotbot_utils import get_links
+import configargparse
+from dotenv import load_dotenv
 
 MAX_VIDEO_LENGTH = 240 * 60
 
-parser = argparse.ArgumentParser()
-parser.add_argument("botname", help="the telegram name of your bot")
-parser.add_argument("responses", help="a json file containing all response textes")
-parser.add_argument("--verbose", help="increase output verbosity", action="store_true")
+load_dotenv()
+parser = configargparse.ArgumentParser()
+parser.add_argument("--botname", help="the telegram name of your bot", env_var="TG_BOT_NAME", required=True)
+parser.add_argument("--token", help="the token you got from @botfather", env_var="TG_BOT_TOKEN", required=True)
+parser.add_argument("--responses", help="a json file containing all response textes", default="responses.json")
+parser.add_argument("--verbose", "-v", help="increase output verbosity", action="store_true")
 parser.add_argument("--log", help="write a log file")
 args = parser.parse_args()
+if args.verbose:
+    print(f"config = {args.__dict__}")
+
 response_path = args.responses
 botname = args.botname
-
 
 logger = logging.getLogger("yotbot")
 logger.setLevel(logging.DEBUG)
@@ -30,7 +36,6 @@ ch = logging.StreamHandler()
 ch.setFormatter(logging.Formatter(f'[%(name)s]%(levelname)s:%(message)s'))
 ch.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 logger.addHandler(ch)
-
 
 if args.log is not None:
     fh = logging.FileHandler(args.log)
@@ -162,8 +167,7 @@ def message_handler(update: telegram.Update, contexts):
         download_video(update, link)
 
 
-token = os.getenv(key="TG_BOT_TOKEN")
-updater = Updater(token, use_context=True)
+updater = Updater(args.token, use_context=True)
 
 updater.dispatcher.add_handler(CommandHandler('start', command_start, run_async=True))
 updater.dispatcher.add_handler(CommandHandler('help', command_help, run_async=True))

@@ -3,3 +3,5 @@ youtube_dl
 mutagen
 django
 requests
+ConfigArgParse
+python-dotenv
