@@ -1,0 +1,10 @@
+README.txt
+setup.cfg
+setup.py
+modbus/client.py
+modbus/server.py
+modbus.egg-info/PKG-INFO
+modbus.egg-info/SOURCES.txt
+modbus.egg-info/dependency_links.txt
+modbus.egg-info/requires.txt
+modbus.egg-info/top_level.txt
