@@ -71,6 +71,26 @@ class client:
         values = self.read(FC, ADR, LEN)
         return client.merge_register(values)
 
+    def read_string(self, FC=4, ADR=0, LEN=0, n_bits=8):
+        """Read multiple registers and returns them a 1 String.
+        By default, it converts splitting in chunks of 8 bits an convert them to chars.
+        Change n_bits if your text is encoded in chunks of 7 bit.
+        See also:
+            read_and_merge()
+        """
+        value = self.read_and_merge(FC, ADR, LEN)
+        value_bin = bin(value)[2:]
+        s = ""
+        #split the binary data to chunks of 8, and convert them to chars
+        for i in range(0, len(value_bin), n_bits):
+            bits = value_bin[i:i+7]
+            bits_int = int(bits, 2)
+            if bits_int == 0:
+                continue
+            bits_char = chr(bits_int)
+            s += bits_char
+        return s
+
     def write(self, *DAT, FC=16, ADR=0): #Default Write: Holding Registers
         if FC not in [5,6,15,16]: return(fc())
         lADR = ADR & 0x00FF
