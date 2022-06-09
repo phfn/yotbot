@@ -48,6 +48,29 @@ class client:
         else:
             return unpack('B' * BYT, buf[9:(9 + BYT)])
 
+    @staticmethod
+    def merge_register(registers: tuple, register_size=16):
+        """Merge s tuple of regster values (as ints) to a single int.
+        Example:
+            merge_register((0b11110000, 0b10101010))
+            0b1111000010101010
+        """
+        res = 0
+        for i, register in enumerate(registers):
+            if register.bit_length() > register_size:
+                raise Exception(f"Register is bigger than register size: len({bin(register)})>{register_size}")
+            res = (register << (register_size*(len(registers)-i-1))) | res
+        return res
+
+    def read_and_merge(self, FC=4, ADR=0, LEN=10):
+        """Read multiple registers and returns them a 1 single int
+        See also:
+            read()
+            merge_register()
+        """
+        values = self.read(FC, ADR, LEN)
+        return client.merge_register(values)
+
     def write(self, *DAT, FC=16, ADR=0): #Default Write: Holding Registers
         if FC not in [5,6,15,16]: return(fc())
         lADR = ADR & 0x00FF
