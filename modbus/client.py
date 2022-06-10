@@ -3,6 +3,7 @@ import socket
 from array import array
 from struct import unpack, pack
 from math import ceil
+from numpy import uint32
 
 __all__ = ["client", 'fc']
 
@@ -26,6 +27,7 @@ class client:
         self.TID = 0
 
     def read(self, FC=4, ADR=0, LEN=10): #Default Read: Input Registers
+        self.sock.connect(self.host, 502)
         if FC not in [1,2,3,4]: return(fc())
         lADR = ADR & 0x00FF
         mADR = ADR >> 8
@@ -63,7 +65,7 @@ class client:
         return res
 
     def read_and_merge(self, FC=4, ADR=0, LEN=10):
-        """Read multiple registers and returns them a 1 single int
+        """Read multiple registers and returns them a 1 single unsigned int
         See also:
             read()
             merge_register()
@@ -90,6 +92,45 @@ class client:
             bits_char = chr(bits_int)
             s += bits_char
         return s
+
+    @staticmethod
+    def _decode_from_twos_complement(bits: int):
+        bits = uint32(bits)
+        if (1 << 32 -1) & bits != 0:
+            # if the highest bit is set, value is negativ
+            bits = uint32(bits -1)
+            bits = uint32(~bits)
+            return -int(bits)
+
+
+    def read_int(self, FC=4, ADR=1, LEN=10):
+        """Read multiple registers and returns them a 1 single signed int.
+        Works only on 32 bit
+        See also:
+            read()
+            merge_register()
+        """
+        uint = uint32(self.read_and_merge(FC, ADR, LEN))
+        if (1 << 31) & uint != 0:
+            # if the highest bit decode_from_twos_complementis set, value is negativ
+            return self._decode_from_twos_complement(uint)
+        return uint
+
+    def read_float(self, FC=4, ADR=1, LEN=10):
+        """Read multiple registers and returns them a 1 single float.
+        Bits get converted by IEEE754
+        Works only on 32 bit
+        See also:
+            read()
+            merge_register()
+        """
+        bin_str = f"{self.read_and_merge(FC, ADR, LEN):032b}"
+        sign = int(bin_str[0])
+        exponent = int(bin_str[1:9],2)
+        mantisse = int("1"+bin_str[9:], 2)
+        shift =  len(bin_str)-9 - (exponent-127) 
+
+        return ((-1)**sign) * mantisse /( 1<<(shift))
 
     def write(self, *DAT, FC=16, ADR=0): #Default Write: Holding Registers
         if FC not in [5,6,15,16]: return(fc())
