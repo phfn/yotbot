@@ -88,12 +88,11 @@ class client:
         See also:
             read_and_merge()
         """
-        value = self.read_and_merge(FC, ADR, LEN)
-        value_bin = bin(value)[2:]
+        bin_str = self.read_bin(FC, ADR, LEN)
         s = ""
         #split the binary data to chunks of 8, and convert them to chars
-        for i in range(0, len(value_bin), n_bits):
-            bits = value_bin[i:i+7]
+        for i in range(0, len(bin_str), n_bits):
+            bits = bin_str[i:i+n_bits]
             bits_int = int(bits, 2)
             if bits_int == 0:
                 continue
@@ -132,13 +131,26 @@ class client:
             read()
             merge_register()
         """
-        bin_str = f"{self.read_and_merge(FC, ADR, LEN):032b}"
+        bin_str = self.read_bin(FC, ADR, LEN)
+        if bin_str == f"{0:032b}":
+            return 0
         sign = int(bin_str[0])
         exponent = int(bin_str[1:9],2)
         mantisse = int("1"+bin_str[9:], 2)
         shift =  len(bin_str)-9 - (exponent-127) 
 
         return ((-1)**sign) * mantisse /( 1<<(shift))
+
+    def read_bin(self, FC=4, ADR=1, LEN=10) -> str:
+        """Read multiple registers and returns them a 1 binary string.
+        See also:
+            read()
+            merge_register()
+        """
+        bit_length = LEN*16
+        value = self.read_and_merge(FC, ADR, LEN)
+        return f"{value:0{bit_length}b}"
+
 
     def write(self, *DAT, FC=16, ADR=0): #Default Write: Holding Registers
         if FC not in [5,6,15,16]: return(fc())
