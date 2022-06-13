@@ -19,15 +19,23 @@ def fc():
             16 = Write Holding Registers")
 
 class client:
-    def __init__(self, host='localhost', unit=1):
+    def __init__(self, host='localhost', port=502, unit=1):
         self.host = host
+        self.port = port
         self.unit = unit
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((host, 502))
         self.TID = 0
 
+    def __enter__(self):
+        self.sock.connect((self.host, self.port))
+        return self
+
+    def __exit__(self, exc_type, exc_val: Exception, taceback):
+        self.sock.close()
+        if exc_val:
+            raise exc_val
+
     def read(self, FC=4, ADR=0, LEN=10): #Default Read: Input Registers
-        self.sock.connect(self.host, 502)
         if FC not in [1,2,3,4]: return(fc())
         lADR = ADR & 0x00FF
         mADR = ADR >> 8
