@@ -19,11 +19,12 @@ def fc():
             16 = Write Holding Registers")
 
 class Modbus_Client:
-    def __init__(self, host='localhost', port=502, unit=1):
+    def __init__(self, host='localhost', port=502, unit=1, timeout=5):
         self.host = host
         self.port = port
         self.unit = unit
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(timeout)
         self.TID = 0
 
     def __enter__(self):
