@@ -18,7 +18,7 @@ def fc():
             15 = Write Coils or Digital Outputs\n\
             16 = Write Holding Registers")
 
-class client:
+class Modbus_Client:
     def __init__(self, host='localhost', port=502, unit=1):
         self.host = host
         self.port = port
@@ -79,7 +79,7 @@ class client:
             merge_register()
         """
         values = self.read(FC, ADR, LEN)
-        return client.merge_register(values)
+        return Modbus_Client.merge_register(values)
 
     def read_string(self, FC=4, ADR=0, LEN=0, n_bits=8):
         """Read multiple registers and returns them a 1 String.
