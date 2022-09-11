@@ -1,3 +1,4 @@
+import traceback
 import argparse
 from Video import Video
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters, run_async
@@ -119,6 +120,7 @@ def download_video(update: telegram.update.Update, url):
 
             mp3_file = vid.download_mp3(bitrate)
         except youtube_dl.utils.DownloadError as err:
+            send_log = False
             if type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 404:
                 error_message = response_texts["404"]
             elif type(err.exc_info[1]) == HTTPError and err.exc_info[1].code == 429:
@@ -132,17 +134,20 @@ def download_video(update: telegram.update.Update, url):
                 error_message = response_texts["geoblock"]
             else: #Only if i dont know the reason why ytdl is failing
                 error_message = response_texts["ytdl_problem"]
-                update.effective_message.reply_text(error_message)
-                with open(os.path.join(vid.get_path(), "video.log")) as file:
-                    update.effective_message.reply_document(file)
+                send_log = True
+                logger.warning(traceback.format_exc())
                 logger.warning(err)
-                return
 
+
+            logger.info("failed")
+
+            if send_log:
+                with open(vid.log_path) as log_file:
+                    update.effective_message.reply_document(log_file)
 
             update.effective_message.reply_text(error_message)
 
             vid.clear()
-            logger.info("failed")
             return
 
         vid.logger.debug(f"filesize@{bitrate}=" + str(os.stat(mp3_file).st_size / 1024 / 1024))

@@ -109,14 +109,14 @@ class Video:
         return mp3_path
 
     def clear(self, keep_log=False):
-        self.logger.debug("clearing")
+        self.logger.debug("clearing, keep_log=%s", keep_log)
         for handler in self.logger.handlers:
             handler.close()
         if not keep_log:
             shutil.rmtree(self.path)
         else:
             for file in os.scandir(self.path):
-                if file.name != "video.log":
+                if file.path != self.log_path:
                     os.remove(file)
 
 
