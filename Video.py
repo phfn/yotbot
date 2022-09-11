@@ -18,7 +18,7 @@ class Video:
         # init dirs
         self.subdir = yotbot_utils.get_random_string()
         self.path = os.path.join(working_dir, self.subdir)
-        self.log_path = os.path.join(self.path, "video.log")
+        self.log_path = os.path.join(self.path, "download_log.txt")
         os.makedirs(self.path)
         self.title = self.subdir
         
