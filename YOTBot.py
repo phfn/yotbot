@@ -129,9 +129,9 @@ def download_video(update: telegram.update.Update, url):
                     or "This video is not available" in str(err):
                 error_message = response_texts["geoblock"]
             elif "Unsupported URL" in str(err):
-                error_message = response_texts["geoblock"]
+                error_message = response_texts["unsupported"]
             elif "This video is only available to Music Premium members" in str(err):
-                error_message = response_texts["geoblock"]
+                error_message = response_texts["premium"]
             else: #Only if i dont know the reason why ytdl is failing
                 error_message = response_texts["ytdl_problem"]
                 send_log = True

@@ -11,5 +11,6 @@
   "ytdl_problem": "There was a problem downloading the Video.",
   "file_to_big" : "File was to big. I'm sry :/",
   "geoblock" : "This video is not available at this bot's location",
+  "premium" : "This Video is only available with YT-Premium, which i dont have.",
   "unsupported": "This URL is not supported :/"
 }
