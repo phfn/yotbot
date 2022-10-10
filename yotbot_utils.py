@@ -1,6 +1,7 @@
 import re
 import string
 import random
+from typing import List
 
 
 def get_valid_filename(s):
@@ -20,7 +21,7 @@ def get_random_string(length=5):
         ret = ret + random.choice(string.ascii_letters)
     return ret
 
-def get_links(message: str) -> list[str]:
+def get_links(message: str) -> List[str]:
     re_url = r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))"
     links = []
     for word in re.split(r"\s", message):
