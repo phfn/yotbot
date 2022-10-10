@@ -3,7 +3,7 @@ import argparse
 from Video import Video
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters, run_async
 import telegram
-import youtube_dl
+import yt_dlp as youtube_dl
 import re
 import os
 import json

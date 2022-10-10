@@ -1,6 +1,6 @@
 import shutil
 
-import youtube_dl
+import yt_dlp as youtube_dl
 import os
 import yotbot_utils
 from mutagen.mp3 import MP3
