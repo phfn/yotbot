@@ -1,5 +1,6 @@
 import traceback
 import argparse
+import subprocess
 from Video import Video
 from telegram.ext import Updater, CommandHandler, MessageHandler, filters, run_async
 import telegram
@@ -15,7 +16,7 @@ import configargparse
 from dotenv import load_dotenv
 
 MAX_VIDEO_LENGTH = 240 * 60
-
+GIT_HASH = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 load_dotenv()
 parser = configargparse.ArgumentParser()
 parser.add_argument("--botname", help="the telegram name of your bot", env_var="TG_BOT_NAME", required=True)
@@ -56,6 +57,8 @@ def command_start(update, context):
     update.effective_message.reply_text(
         "Hi, nice to see you here. Just paste your links and i will download for u")
 
+def command_hash(update, context):
+    update.effective_message.reply_text(GIT_HASH)
 
 def command_help(update: telegram.Update, context):
     update.effective_message.reply_text(
@@ -180,6 +183,7 @@ updater.dispatcher.add_handler(CommandHandler('about', command_about, run_async=
 updater.dispatcher.add_handler(CommandHandler('dl', command_dl, run_async=True))
 updater.dispatcher.add_handler(CommandHandler('search', command_search, run_async=True))
 updater.dispatcher.add_handler(CommandHandler('s', command_search, run_async=True))
+updater.dispatcher.add_handler(CommandHandler('hash', command_hash, run_async=True))
 updater.dispatcher.add_handler(MessageHandler(filters.Filters.text, message_handler, run_async=True))
 
 updater.start_polling(timeout=10)
