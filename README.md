@@ -27,17 +27,9 @@ To customize the messages the bot writes, you need to modify responses.json.
 ## Container
 There is support to build a Container image
 ```bash
-podman build --tag=yotbot .
-```
-
-```docker-compse
-version: "3.3"
-services:
-  yotbot:
-  image: yotbot
-    environment:
-      - TG_BOT_NAME=my_wonderfull_download_bot
-      - TG_BOT_TOKEN=969855739:AAEqhAK5peBt42I7Z4FqsOFxGQO818ja768
+docker build -f Containerfile -t yotbot . && docker run yotbot
+# or
+docker-compose up --build
 ```
 
 ## Licence

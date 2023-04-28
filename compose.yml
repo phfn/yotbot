@@ -1,0 +1,9 @@
+version: "3.3"
+services:
+  yotbot:
+    build:
+      context: .
+      dockerfile: Containerfile
+    environment:
+      - TG_BOT_NAME
+      - TG_BOT_TOKEN
