@@ -16,6 +16,7 @@ import configargparse
 from dotenv import load_dotenv
 
 MAX_VIDEO_LENGTH = 240 * 60
+MAX_FILE_SIZE = 50  # mb
 GIT_HASH = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
 load_dotenv()
 parser = configargparse.ArgumentParser()
@@ -120,6 +121,8 @@ def download_video(update: telegram.update.Update, url):
                     response_texts["vid_to_long"].replace("{limit}", {int(MAX_VIDEO_LENGTH / 60)}))
                 vid.logger.debug("Video to long")
                 return
+            if vid.estimate_audio_size(bitrate) > MAX_FILE_SIZE:
+                continue
 
             mp3_file = vid.download_mp3(bitrate)
         except youtube_dl.utils.DownloadError as err:

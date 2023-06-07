@@ -60,6 +60,17 @@ class Video:
         self.logger.debug(f"length={duration}")
         return duration
 
+    def estimate_audio_size(self, bitrate: int):
+        """
+        estimate roughly duration of mp3 by length.
+        input seconds.
+        output mb
+        """
+        estimated_size = self.get_length()*bitrate/9000
+        self.logger.debug(f"{estimated_size=}")
+        return estimated_size
+
+
     def get_full_mp3_path(self):
         if not self.downloaded: raise FileNotFoundError
         return self.path+"/"+self.title+".mp3"
